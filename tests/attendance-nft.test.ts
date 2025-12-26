@@ -420,7 +420,7 @@ describe("Attendance NFT Contract Tests", () => {
         [Cl.uint(1), Cl.principal(attendee1)],
         organizer
       );
-
+      
       expect(result).toBeSome(
         Cl.tuple({
           "token-id": Cl.uint(1),
@@ -583,3 +583,63 @@ describe("Attendance NFT Contract Tests", () => {
         [Cl.stringAscii("Event 2"), Cl.uint(futureBlock), Cl.uint(50)],
         organizer
       );
+      
+      result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event-count",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(2);
+    });
+
+    it("get-total-nfts returns correct count", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      
+      let result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-total-nfts",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(0);
+
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+      
+      result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-total-nfts",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(1);
+
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee2)],
+        organizer
+      );
+      
+      result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-total-nfts",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(2);
+    });
+  });
+});
