@@ -77,3 +77,34 @@
     (nft-transfer? attendance-nft token-id sender recipient)
   )
 )
+
+;; Custom Functions for Event Management
+
+;; Create a new event
+(define-public (create-event (name (string-ascii 100)) (date uint) (max-attendees uint))
+  (let
+    (
+      (event-id (+ (var-get last-event-id) u1))
+    )
+    ;; Validate inputs
+    (asserts! (> (len name) u0) ERR-INVALID-EVENT-DATA)
+    (asserts! (> date stacks-block-height) ERR-INVALID-EVENT-DATA)
+    (asserts! (> max-attendees u0) ERR-INVALID-EVENT-DATA)
+    
+    ;; Create event
+    (map-set events event-id
+      {
+        name: name,
+        organizer: tx-sender,
+        date: date,
+        max-attendees: max-attendees,
+        issued-count: u0,
+        is-active: true
+      }
+    )
+    
+    ;; Update event counter
+    (var-set last-event-id event-id)
+    (ok event-id)
+  )
+)
