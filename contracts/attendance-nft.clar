@@ -108,3 +108,30 @@
     (ok event-id)
   )
 )
+
+;; Issue attendance NFT to an attendee
+(define-public (issue-attendance (event-id uint) (attendee principal))
+  (let
+    (
+      (event (unwrap! (map-get? events event-id) ERR-EVENT-NOT-FOUND))
+      (token-id (+ (var-get last-token-id) u1))
+      (new-issued-count (+ (get issued-count event) u1))
+    )
+    ;; Verify organizer
+    (asserts! (is-eq tx-sender (get organizer event)) ERR-NOT-AUTHORIZED)
+    
+    ;; Verify event is active
+    (asserts! (get is-active event) ERR-EVENT-CLOSED)
+    
+    ;; Validate attendee is a valid principal
+    (asserts! (not (is-eq attendee (get organizer event))) ERR-NOT-AUTHORIZED)
+    
+    ;; Check if attendee already has attendance for this event
+    (asserts! (is-none (map-get? attendance-records { event-id: event-id, attendee: attendee }))
+      ERR-ALREADY-ATTENDED)
+    
+    ;; Check max attendees
+    (asserts! (<= new-issued-count (get max-attendees event)) ERR-MAX-ATTENDEES-REACHED)
+    
+    ;; Mint NFT
+    (try! (nft-mint? attendance-nft token-id attendee))
