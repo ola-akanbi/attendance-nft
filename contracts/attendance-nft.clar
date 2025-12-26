@@ -1,10 +1,11 @@
 ;; Proof of Attendance NFT Contract
 ;; Allows event organizers to issue verifiable attendance NFTs
 
+;; Use-trait: Import the NFT trait from mainnet
+(use-trait nft-trait 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait)
+
 ;; Implement the SIP-009 NFT trait
-;; TESTNET: Use ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT.nft-trait.nft-trait
-;; MAINNET: Use SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait
-(impl-trait 'ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT.nft-trait.nft-trait)
+(impl-trait 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait)
 
 ;; Define the NFT
 (define-non-fungible-token attendance-nft uint)
