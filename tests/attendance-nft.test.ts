@@ -56,3 +56,81 @@ describe("Attendance NFT Contract Tests", () => {
       expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
     });
   });
+
+  describe("Event Management", () => {
+    it("creates an event successfully", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [
+          Cl.stringAscii("Web3 Conference"),
+          Cl.uint(futureBlock),
+          Cl.uint(100),
+        ],
+        organizer
+      );
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("fails to create event with empty name", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii(""), Cl.uint(futureBlock), Cl.uint(100)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(106)); // ERR-INVALID-EVENT-DATA
+    });
+
+    it("fails to create event with past date", () => {
+      const pastBlock = simnet.blockHeight - 1;
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Past Event"), Cl.uint(pastBlock), Cl.uint(100)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(106)); // ERR-INVALID-EVENT-DATA
+    });
+
+    it("fails to create event with zero max attendees", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Invalid Event"), Cl.uint(futureBlock), Cl.uint(0)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(106)); // ERR-INVALID-EVENT-DATA
+    });
+
+    it("creates multiple events with incrementing IDs", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      
+      const event1 = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event 1"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+      expect(event1.result).toBeOk(Cl.uint(1));
+
+      const event2 = simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event 2"), Cl.uint(futureBlock), Cl.uint(75)],
+        organizer
+      );
+      expect(event2.result).toBeOk(Cl.uint(2));
+    });
+
+    it("retrieves event details correctly", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Test Event"), Cl.uint(futureBlock), Cl.uint(100)],
+        organizer
+      );
