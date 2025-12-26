@@ -1,0 +1,29 @@
+;; Proof of Attendance NFT Contract
+;; Allows event organizers to issue verifiable attendance NFTs
+
+;; Implement the SIP-009 NFT trait
+;; TESTNET: Use ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT.nft-trait.nft-trait
+;; MAINNET: Use SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait
+(impl-trait 'ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT.nft-trait.nft-trait)
+
+;; Define the NFT
+(define-non-fungible-token attendance-nft uint)
+
+;; Data Variables
+(define-data-var last-token-id uint u0)
+(define-data-var last-event-id uint u0)
+(define-data-var base-token-uri (string-ascii 256) "https://attendance.example.com/metadata/")
+
+;; Data Maps
+;; Event registry: event-id -> event details
+(define-map events
+  uint
+  {
+    name: (string-ascii 100),
+    organizer: principal,
+    date: uint,
+    max-attendees: uint,
+    issued-count: uint,
+    is-active: bool
+  }
+)
