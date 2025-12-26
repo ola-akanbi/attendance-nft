@@ -505,3 +505,81 @@ describe("Attendance NFT Contract Tests", () => {
       );
       expect(result).toBeErr(Cl.uint(101)); // ERR-NOT-TOKEN-OWNER
     });
+
+    it("fails to transfer non-existent token", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "transfer",
+        [Cl.uint(999), Cl.principal(attendee1), Cl.principal(attendee2)],
+        attendee1
+      );
+      expect(result).toBeErr(Cl.uint(101)); // ERR-NOT-TOKEN-OWNER
+    });
+  });
+
+  describe("Base URI Management", () => {
+    it("sets base URI successfully", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "set-base-uri",
+        [Cl.stringAscii("https://new-uri.com/metadata/")],
+        organizer
+      );
+      expect(result).toBeOk(Cl.bool(true));
+
+      // Verify new URI
+      const uri = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-token-uri",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(uri.result).toBeOk(
+        Cl.some(Cl.stringAscii("https://new-uri.com/metadata/"))
+      );
+    });
+
+    it("fails to set empty URI", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "set-base-uri",
+        [Cl.stringAscii("")],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(106)); // ERR-INVALID-EVENT-DATA
+    });
+  });
+
+  describe("Read-Only Functions", () => {
+    it("get-event-count returns correct count", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      
+      let result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event-count",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(0);
+
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event 1"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+      
+      result = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event-count",
+        [],
+        organizer
+      );
+      expect(result.result).toBeUint(1);
+
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event 2"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
