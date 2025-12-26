@@ -11,7 +11,7 @@ plan:
         - contract-publish:
             contract-name: attendance-nft
             expected-sender: SP11MXPJA03GJ9FS5H6GWPWH3ZDNR7P1DSAPKP6KD
-            cost: 61500
+            cost: 61280
             path: contracts/attendance-nft.clar
             anchor-block-only: true
             clarity-version: 3

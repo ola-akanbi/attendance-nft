@@ -134,3 +134,87 @@ describe("Attendance NFT Contract Tests", () => {
         [Cl.stringAscii("Test Event"), Cl.uint(futureBlock), Cl.uint(100)],
         organizer
       );
+
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event",
+        [Cl.uint(1)],
+        organizer
+      );
+      
+      expect(result).toBeSome(
+        Cl.tuple({
+          name: Cl.stringAscii("Test Event"),
+          organizer: Cl.principal(organizer),
+          date: Cl.uint(futureBlock),
+          "max-attendees": Cl.uint(100),
+          "issued-count": Cl.uint(0),
+          "is-active": Cl.bool(true),
+        })
+      );
+    });
+
+    it("closes event successfully", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Event to Close"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "close-event",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(result).toBeOk(Cl.bool(true));
+
+      // Verify event is closed
+      const eventData = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(eventData.result).toBeSome(
+        Cl.tuple({
+          name: Cl.stringAscii("Event to Close"),
+          organizer: Cl.principal(organizer),
+          date: Cl.uint(futureBlock),
+          "max-attendees": Cl.uint(50),
+          "issued-count": Cl.uint(0),
+          "is-active": Cl.bool(false),
+        })
+      );
+    });
+
+    it("fails to close non-existent event", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "close-event",
+        [Cl.uint(999)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(102)); // ERR-EVENT-NOT-FOUND
+    });
+
+    it("fails to close event by non-organizer", () => {
+      const futureBlock = simnet.blockHeight + 100;
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Protected Event"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "close-event",
+        [Cl.uint(1)],
+        attendee1
+      );
+      expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
+    });
+  });
