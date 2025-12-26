@@ -135,3 +135,32 @@
     
     ;; Mint NFT
     (try! (nft-mint? attendance-nft token-id attendee))
+
+    ;; Record attendance
+    (map-set attendance-records
+      { event-id: event-id, attendee: attendee }
+      { token-id: token-id, issued-at: stacks-block-height }
+    )
+    
+    ;; Map token to event
+    (map-set token-to-event token-id event-id)
+    
+    ;; Update event issued count
+    (map-set events event-id
+      (merge event { issued-count: new-issued-count })
+    )
+    
+    ;; Update token counter
+    (var-set last-token-id token-id)
+    (ok token-id)
+  )
+)
+
+;; Close an event (stop issuing new NFTs)
+(define-public (close-event (event-id uint))
+  (let
+    (
+      (event (unwrap! (map-get? events event-id) ERR-EVENT-NOT-FOUND))
+    )
+    ;; Verify organizer
+    (asserts! (is-eq tx-sender (get organizer event)) ERR-NOT-AUTHORIZED)
