@@ -164,3 +164,33 @@
     )
     ;; Verify organizer
     (asserts! (is-eq tx-sender (get organizer event)) ERR-NOT-AUTHORIZED)
+
+    ;; Close event
+    (map-set events event-id
+      (merge event { is-active: false })
+    )
+    (ok true)
+  )
+)
+
+;; Read-only functions
+
+;; Get event details
+(define-read-only (get-event (event-id uint))
+  (map-get? events event-id)
+)
+
+;; Get attendance record for a specific attendee at an event
+(define-read-only (get-attendance-record (event-id uint) (attendee principal))
+  (map-get? attendance-records { event-id: event-id, attendee: attendee })
+)
+
+;; Check if an address attended an event
+(define-read-only (has-attended (event-id uint) (attendee principal))
+  (is-some (map-get? attendance-records { event-id: event-id, attendee: attendee }))
+)
+
+;; Get event ID for a token
+(define-read-only (get-event-for-token (token-id uint))
+  (map-get? token-to-event token-id)
+)
