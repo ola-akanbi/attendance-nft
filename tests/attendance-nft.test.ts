@@ -218,3 +218,78 @@ describe("Attendance NFT Contract Tests", () => {
       expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
     });
   });
+
+  describe("Attendance Issuance", () => {
+    beforeEach(() => {
+      const futureBlock = simnet.blockHeight + 100;
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Conference 2025"), Cl.uint(futureBlock), Cl.uint(3)],
+        organizer
+      );
+    });
+
+    it("issues attendance NFT successfully", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("updates token count after issuing", () => {
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-last-token-id",
+        [],
+        organizer
+      );
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("attendee owns the minted NFT", () => {
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-owner",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(result).toBeOk(Cl.some(Cl.principal(attendee1)));
+    });
+
+    it("fails to issue to non-existent event", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(999), Cl.principal(attendee1)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(102)); // ERR-EVENT-NOT-FOUND
+    });
+
+    it("fails when non-organizer tries to issue", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee2)],
+        attendee1
+      );
+      expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
+    });
