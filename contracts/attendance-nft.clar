@@ -135,7 +135,7 @@
     
     ;; Mint NFT
     (try! (nft-mint? attendance-nft token-id attendee))
-
+    
     ;; Record attendance
     (map-set attendance-records
       { event-id: event-id, attendee: attendee }
@@ -164,7 +164,7 @@
     )
     ;; Verify organizer
     (asserts! (is-eq tx-sender (get organizer event)) ERR-NOT-AUTHORIZED)
-
+    
     ;; Close event
     (map-set events event-id
       (merge event { is-active: false })
@@ -193,4 +193,24 @@
 ;; Get event ID for a token
 (define-read-only (get-event-for-token (token-id uint))
   (map-get? token-to-event token-id)
+)
+
+;; Get current event count
+(define-read-only (get-event-count)
+  (var-get last-event-id)
+)
+
+;; Get total NFTs minted
+(define-read-only (get-total-nfts)
+  (var-get last-token-id)
+)
+
+;; Update base URI (organizer only for their events)
+(define-public (set-base-uri (new-uri (string-ascii 256)))
+  (begin
+    ;; Validate new-uri is not empty
+    (asserts! (> (len new-uri) u0) ERR-INVALID-EVENT-DATA)
+    (var-set base-token-uri new-uri)
+    (ok true)
+  )
 )
