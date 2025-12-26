@@ -293,3 +293,51 @@ describe("Attendance NFT Contract Tests", () => {
       );
       expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
     });
+
+    it("fails to issue attendance twice to same attendee", () => {
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(104)); // ERR-ALREADY-ATTENDED
+    });
+
+    it("fails when max attendees reached", () => {
+      // Issue to 3 attendees (max)
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee2)],
+        organizer
+      );
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee3)],
+        organizer
+      );
+
+      // Try to issue to 4th attendee
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(deployer)],
+        organizer
+      );
+      expect(result).toBeErr(Cl.uint(105)); // ERR-MAX-ATTENDEES-REACHED
+    });
