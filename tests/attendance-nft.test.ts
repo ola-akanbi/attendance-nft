@@ -420,3 +420,88 @@ describe("Attendance NFT Contract Tests", () => {
         [Cl.uint(1), Cl.principal(attendee1)],
         organizer
       );
+
+      expect(result).toBeSome(
+        Cl.tuple({
+          "token-id": Cl.uint(1),
+          "issued-at": Cl.uint(simnet.blockHeight),
+        })
+      );
+    });
+
+    it("has-attended returns true for attendee", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "has-attended",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+      expect(result).toBeBool(true);
+    });
+
+    it("has-attended returns false for non-attendee", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "has-attended",
+        [Cl.uint(1), Cl.principal(attendee2)],
+        organizer
+      );
+      expect(result).toBeBool(false);
+    });
+
+    it("maps token to event correctly", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-event-for-token",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(result).toBeSome(Cl.uint(1));
+    });
+  });
+
+  describe("NFT Transfer", () => {
+    beforeEach(() => {
+      const futureBlock = simnet.blockHeight + 100;
+      simnet.callPublicFn(
+        "attendance-nft",
+        "create-event",
+        [Cl.stringAscii("Meetup"), Cl.uint(futureBlock), Cl.uint(50)],
+        organizer
+      );
+      simnet.callPublicFn(
+        "attendance-nft",
+        "issue-attendance",
+        [Cl.uint(1), Cl.principal(attendee1)],
+        organizer
+      );
+    });
+
+    it("transfers NFT successfully", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "transfer",
+        [Cl.uint(1), Cl.principal(attendee1), Cl.principal(attendee2)],
+        attendee1
+      );
+      expect(result).toBeOk(Cl.bool(true));
+
+      // Verify new owner
+      const owner = simnet.callReadOnlyFn(
+        "attendance-nft",
+        "get-owner",
+        [Cl.uint(1)],
+        organizer
+      );
+      expect(owner.result).toBeOk(Cl.some(Cl.principal(attendee2)));
+    });
+
+    it("fails to transfer when not owner", () => {
+      const { result } = simnet.callPublicFn(
+        "attendance-nft",
+        "transfer",
+        [Cl.uint(1), Cl.principal(attendee2), Cl.principal(attendee3)],
+        attendee2
+      );
+      expect(result).toBeErr(Cl.uint(101)); // ERR-NOT-TOKEN-OWNER
+    });
