@@ -55,3 +55,25 @@
 (define-read-only (get-last-token-id)
   (ok (var-get last-token-id))
 )
+
+;; Get token URI - returns metadata link for the NFT
+(define-read-only (get-token-uri (token-id uint))
+  (ok (some (var-get base-token-uri)))
+)
+
+;; Get owner of a token
+(define-read-only (get-owner (token-id uint))
+  (ok (nft-get-owner? attendance-nft token-id))
+)
+
+;; Transfer token - SIP-009 requires this signature
+(define-public (transfer (token-id uint) (sender principal) (recipient principal))
+  (begin
+    (asserts! (is-eq tx-sender sender) ERR-NOT-AUTHORIZED)
+    (asserts! (is-eq sender (unwrap! (nft-get-owner? attendance-nft token-id) ERR-NOT-TOKEN-OWNER))
+      ERR-NOT-TOKEN-OWNER)
+    ;; Validate recipient is not zero address
+    (asserts! (not (is-eq recipient tx-sender)) ERR-NOT-AUTHORIZED)
+    (nft-transfer? attendance-nft token-id sender recipient)
+  )
+)
